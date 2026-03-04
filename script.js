@@ -1,68 +1,87 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, onSnapshot, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Firebase Configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCxX35ldMY11bmT81_muSZZ84EAQMagv6A",
-  authDomain: "korawitapp.firebaseapp.com",
-  projectId: "korawitapp",
-  storageBucket: "korawitapp.firebasestorage.app",
-  messagingSenderId: "225570538790",
-  appId: "1:225570538790:web:e3c9994a526b6375cd6de7",
-  measurementId: "G-NKV0MW4WZS"
+    apiKey: "AIzaSyCxX35ldMY11bmT81_muSZZ84EAQMagv6A",
+    authDomain: "korawitapp.firebaseapp.com",
+    projectId: "korawitapp",
+    storageBucket: "korawitapp.firebasestorage.app",
+    messagingSenderId: "225570538790",
+    appId: "1:225570538790:web:e3c9994a526b6375cd6de7",
+    measurementId: "G-NKV0MW4WZS"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const candidateList = document.getElementById('candidate-list');
+// ฟังก์ชันสลับ Tab
+window.openTab = (tabId) => {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).classList.remove('hidden');
+    event.currentTarget.classList.add('active');
+}
 
-// ฟังก์ชันดึงข้อมูลผู้สมัคร
-async function loadCandidates() {
-    if (localStorage.getItem('hasVoted')) {
-        showVotedStatus();
-        return;
-    }
+// ฟังการเปลี่ยนแปลงข้อมูลแบบ Real-time
+function startApp() {
+    const candidatesCol = collection(db, "candidates");
 
-    const querySnapshot = await getDocs(collection(db, "candidates"));
-    candidateList.innerHTML = ""; // ล้างหน้าจอ
-
-    querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `
-            <h3>เบอร์ ${data.number}</h3>
-            <h4>${data.name}</h4>
-            <button onclick="vote('${docSnap.id}')">ลงคะแนน</button>
-        `;
-        candidateList.appendChild(card);
+    onSnapshot(candidatesCol, (snapshot) => {
+        const candidates = [];
+        snapshot.forEach(doc => candidates.push({ id: doc.id, ...doc.data() }));
+        
+        // จัดเรียงตามเบอร์
+        candidates.sort((a, b) => a.number - b.number);
+        
+        renderVoting(candidates);
+        renderResults(candidates);
     });
 }
 
-// ฟังก์ชันการโหวต
-window.vote = async function(candidateId) {
-    if (confirm("ยืนยันการลงคะแนนใช่หรือไม่?")) {
-        try {
-            const candidateRef = doc(db, "candidates", candidateId);
-            await updateDoc(candidateRef, {
-                votes: increment(1)
-            });
-            
-            localStorage.setItem('hasVoted', 'true');
-            showVotedStatus();
-            alert("ขอบคุณสำหรับคะแนนเสียงครับ!");
-        } catch (error) {
-            console.error("Error voting: ", error);
-            alert("เกิดข้อผิดพลาด กรุณาลองใหม่");
-        }
+// แสดงหน้าลงคะแนน
+function renderVoting(candidates) {
+    const list = document.getElementById('candidate-list');
+    if (localStorage.getItem('hasVoted')) {
+        document.getElementById('candidate-list').classList.add('hidden');
+        document.getElementById('voted-message').classList.remove('hidden');
+        return;
+    }
+
+    list.innerHTML = candidates.map(c => `
+        <div class="antique-card">
+            <div class="candidate-num">หมายเลข ${c.number}</div>
+            <div class="party-name">พรรค: ${c.party || 'ไม่ระบุพรรค'}</div>
+            <div class="leader-name">หัวหน้าพรรค: ${c.name}</div>
+            <button class="tab-btn active" style="width:100%" onclick="vote('${c.id}')">ลงคะแนน</button>
+        </div>
+    `).join('');
+}
+
+// แสดงหน้าผลคะแนน (แถบสี)
+function renderResults(candidates) {
+    const resultsDiv = document.getElementById('live-results');
+    const totalVotes = candidates.reduce((sum, c) => sum + (c.votes || 0), 0);
+
+    resultsDiv.innerHTML = candidates.map(c => {
+        const percentage = totalVotes > 0 ? ((c.votes / totalVotes) * 100).toFixed(1) : 0;
+        return `
+            <div class="result-item">
+                <strong>หมายเลข ${c.number} - ${c.party}</strong> (คะแนน: ${c.votes || 0})
+                <div class="bar-container">
+                    <div class="bar-fill" style="width: ${percentage}%">${percentage}%</div>
+                </div>
+            </div>
+        `;
+    }).join('') + `<p style="text-align:center">คะแนนรวมทั้งหมด: ${totalVotes} เสียง</p>`;
+}
+
+// ฟังก์ชันโหวต
+window.vote = async (id) => {
+    if (confirm("ยืนยันการเลือกผู้สมัครท่านนี้?")) {
+        await updateDoc(doc(db, "candidates", id), { votes: increment(1) });
+        localStorage.setItem('hasVoted', 'true');
+        location.reload(); // รีโหลดเพื่อไปหน้าแสดงผล
     }
 }
 
-function showVotedStatus() {
-    candidateList.classList.add('hidden');
-    document.getElementById('voted-message').classList.remove('hidden');
-}
-
-loadCandidates();
+startApp();
