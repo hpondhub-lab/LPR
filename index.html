@@ -3,22 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบเลือกตั้งสภานักเรียน</title>
+    <title>ระบบเลือกตั้งสภานักเรียนอันทรงเกียรติ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
+    <div class="vintage-pattern"></div>
+    <div class="container antique-container">
         <header>
-            <h1>เลือกตั้งสภานักเรียน 2569</h1>
-            <p>โปรดเลือกผู้สมัครที่ท่านไว้วางใจ</p>
+            <h1 class="antique-title">การเลือกตั้งสภานักเรียน ประจำปี พ.ศ. 2569</h1>
+            <div class="antique-border"></div>
         </header>
 
-        <div id="candidate-list" class="grid-container">
-            <p>กำลังโหลดข้อมูลผู้สมัคร...</p>
+        <div class="tab-menu">
+            <button class="tab-btn active" onclick="openTab('voting-section')">คูหาลงคะแนน</button>
+            <button class="tab-btn" onclick="openTab('result-section')">ประกาศผลคะแนนสด</button>
         </div>
 
-        <div id="voted-message" class="hidden">
-            <div class="alert success">คุณได้ลงคะแนนเรียบร้อยแล้ว ขอบคุณที่ใช้สิทธิ์ครับ!</div>
+        <div id="voting-section" class="tab-content">
+            <div id="candidate-list" class="grid-container antique-grid">
+                <p>กำลังเตรียมรายชื่อผู้สมัคร...</p>
+            </div>
+            <div id="voted-message" class="hidden">
+                <div class="alert antique-alert">ท่านได้ใช้สิทธิ์ลงคะแนนเรียบร้อยแล้ว</div>
+            </div>
+        </div>
+
+        <div id="result-section" class="tab-content hidden">
+            <h2 class="section-title">สรุปคะแนนเสียงปัจจุบัน</h2>
+            <div id="live-results" class="results-container">
+                </div>
         </div>
     </div>
 
