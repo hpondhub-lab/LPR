@@ -76,5 +76,51 @@ body {
     padding-right: 10px;
     font-size: 0.8em;
 }
+/* ส่วน Drop Zone */
+.drop-zone {
+    border: 2px dashed #b89356;
+    padding: 20px;
+    margin: 15px 0;
+    cursor: pointer;
+    background: #fdfaf3;
+    color: #8c735a;
+}
+.drop-zone.dragover { background: #efe4d1; border-color: #8c735a; }
 
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.form-grid input, .form-grid textarea {
+    padding: 8px;
+    border: 1px solid #d4b791;
+    font-family: 'Sarabun', sans-serif;
+}
+textarea { grid-column: span 2; height: 60px; }
+
+/* ปรับปรุงบัตรผู้สมัคร */
+.candidate-img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border: 3px solid #b89356;
+    margin-bottom: 10px;
+    background: #eee;
+}
+.policy-box {
+    font-size: 0.85em;
+    background: #efe4d1;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+    text-align: left;
+}
+.grade-badge {
+    color: #8c735a;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+}
 .hidden { display: none; }
