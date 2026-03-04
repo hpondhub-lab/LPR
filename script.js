@@ -83,5 +83,80 @@ window.vote = async (id) => {
         location.reload(); // รีโหลดเพื่อไปหน้าแสดงผล
     }
 }
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
+const firebaseConfig = { /* ... ข้อมูลเดิมของคุณ ... */ };
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+// --- ระบบ Drag & Drop ---
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+let selectedFile = null;
+
+dropZone.onclick = () => fileInput.click();
+dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+dropZone.ondrop = (e) => {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    selectedFile = e.dataTransfer.files[0];
+    document.getElementById('file-preview').innerText = `ไฟล์ที่เลือก: ${selectedFile.name}`;
+};
+fileInput.onchange = (e) => {
+    selectedFile = e.target.files[0];
+    document.getElementById('file-preview').innerText = `ไฟล์ที่เลือก: ${selectedFile.name}`;
+};
+
+// --- บันทึกข้อมูลผู้สมัคร ---
+document.getElementById('btn-save-candidate').onclick = async () => {
+    const num = document.getElementById('reg-number').value;
+    const name = document.getElementById('reg-name').value;
+    const grade = document.getElementById('reg-grade').value;
+    const party = document.getElementById('reg-party').value;
+    const policy = document.getElementById('reg-policy').value;
+
+    if (!num || !name || !selectedFile) return alert("กรุณากรอกข้อมูลและเลือกรูปภาพ");
+
+    try {
+        // 1. อัปโหลดรูปภาพ
+        const storageRef = ref(storage, `candidates/no_${num}_${Date.now()}`);
+        const snapshot = await uploadBytes(storageRef, selectedFile);
+        const imgUrl = await getDownloadURL(snapshot.ref);
+
+        // 2. บันทึกข้อมูลลง Firestore
+        await setDoc(doc(db, "candidates", `no_${num}`), {
+            number: parseInt(num),
+            name: name,
+            grade: grade,
+            party: party,
+            policy: policy,
+            imageUrl: imgUrl,
+            votes: 0
+        });
+
+        alert("ลงทะเบียนผู้สมัครสำเร็จ!");
+        location.reload();
+    } catch (e) { console.error(e); alert("เกิดข้อผิดพลาด"); }
+};
+
+// --- ปรับปรุงการแสดงผล (ในฟังก์ชัน renderVoting) ---
+function renderVoting(candidates) {
+    const list = document.getElementById('candidate-list');
+    list.innerHTML = candidates.map(c => `
+        <div class="antique-card">
+            <div class="candidate-num">เบอร์ ${c.number}</div>
+            <img src="${c.imageUrl || 'default-avatar.png'}" class="candidate-img">
+            <div class="leader-name">${c.name}</div>
+            <span class="grade-badge">ชั้น ${c.grade || 'ไม่ระบุ'}</span>
+            <div class="party-name">พรรค: ${c.party}</div>
+            <div class="policy-box"><strong>นโยบาย:</strong> ${c.policy || '-'}</div>
+            <button class="antique-button" style="margin-top:15px" onclick="vote('${c.id}')">ลงคะแนนเสียง</button>
+        </div>
+    `).join('');
+}
 startApp();
